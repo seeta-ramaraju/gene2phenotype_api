@@ -52,7 +52,7 @@ jobs:
           echo "host=localhost" >> /home/runner/work/config.ini
           echo "port=25" >> /home/runner/work/config.ini
           echo "mailing_list=test_email" >> /home/runner/work/config.ini
-          echo "send_to_mailing_list=false" >>  /home/runner/work/config.ini
+          echo "send_to_mailing_list=False" >>  /home/runner/work/config.ini
           echo "[settings]" >> /home/runner/work/config.ini
           echo "DEBUG=True" >> /home/runner/work/config.ini
           echo "ALLOWED_HOSTS=[]" >> /home/runner/work/config.ini
