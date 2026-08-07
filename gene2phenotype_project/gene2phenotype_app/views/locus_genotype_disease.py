@@ -1679,6 +1679,74 @@ class LGDEditComment(APIView):
 
 
 @extend_schema(exclude=True)
+class LGDEditVariantTypeComment(CustomPermissionAPIView):
+    """
+    Delete a variant type comment from a G2P record (LGD).
+    """
+
+    http_method_names = ["patch", "options"]
+
+    method_permissions = {
+        "patch": [permissions.IsAuthenticated, IsSuperUser],
+    }
+
+    @transaction.atomic
+    def patch(self, request, stable_id):
+        """
+        Soft-delete a variant type comment by comment_id.
+        """
+        comment_id = request.data.get("comment_id", None)
+        user = request.user
+
+        if not comment_id:
+            return Response(
+                {"error": "Missing input key 'comment_id'"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        lgd_obj = get_object_or_404(
+            LocusGenotypeDisease, stable_id__stable_id=stable_id, is_deleted=0
+        )
+
+        # Check if user has permission to update panel
+        user_obj = get_object_or_404(User, email=user, is_active=1)
+        serializer_user = UserSerializer(user_obj, context={"user": user})
+        user_panel_list = [panel for panel in serializer_user.panels_names(user_obj)]
+        has_common = LocusGenotypeDiseaseSerializer(
+            lgd_obj, context={"user": user}
+        ).check_user_permission(lgd_obj, user_panel_list)
+        if has_common is False:
+            return Response(
+                {"error": f"No permission to update record '{stable_id}'"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            variant_type_comment = LGDVariantTypeComment.objects.get(
+                lgd_variant_type__lgd=lgd_obj, id=comment_id, is_deleted=0
+            )
+        except LGDVariantTypeComment.DoesNotExist:
+            return Response(
+                {
+                    "error": f"Cannot find variant type comment for record '{stable_id}'"
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        variant_type_comment.is_deleted = 1
+        variant_type_comment.save()
+        lgd_obj.date_review = get_date_now()
+        lgd_obj.save_without_historical_record()
+
+        return Response(
+            {
+                "message": f"Variant type comment successfully deleted for record '{stable_id}'"
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(exclude=True)
 class LGDEditReview(APIView):
     http_method_names = ["post", "options"]
     serializer_class = LGDReviewSerializer
