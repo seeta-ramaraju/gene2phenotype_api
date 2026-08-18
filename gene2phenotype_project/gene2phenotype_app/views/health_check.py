@@ -1,4 +1,4 @@
-from django.db import DatabaseError, connection
+from django.db import DatabaseError, InterfaceError, connection
 from django.http import JsonResponse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_safe
@@ -18,7 +18,7 @@ def readiness_check(request):
     try:
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
-    except DatabaseError:
+    except (DatabaseError, InterfaceError):
         return JsonResponse(
             {"status": "not_ready", "database": "unavailable"},
             status=503,
