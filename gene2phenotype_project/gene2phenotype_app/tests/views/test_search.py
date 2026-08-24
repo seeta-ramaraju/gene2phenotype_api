@@ -263,9 +263,9 @@ class SearchTests(TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.data["error"], "No matching draft found for: CDH1")
 
-    def test_search_draft_not_found_manual(self):
+    def test_search_draft_found_automatic(self):
         """
-        Test automatic drafts are excluded when the owner is not in g2p_admin.
+        Test automatic drafts are included in the response when the owner is not in g2p_admin.
         """
         # Login
         user = User.objects.get(email="user5@test.ac.uk")
@@ -278,11 +278,8 @@ class SearchTests(TestCase):
         url_search_id = f"{self.base_url_search}?type=draft&query=MPI"
         response = self.client.get(url_search_id)
 
-        # The search endpoint searches for only manual curations
-        # But for this test, there are only automatic curations for given query
-        # So, the endpoint should return an error
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.data["error"], "No matching draft found for: MPI")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 1)
 
     def test_search_draft_automatic_for_g2p_admin(self):
         """

@@ -357,12 +357,9 @@ class SearchView(BaseView):
             # to extend the queryset being annotated when it is draft,
             # we want to return username so curator can see who is curating
             # also add the curator email, incase of the notification
-            # Return all manual curations and automatic curations owned by g2p admins.
+            # Return all manual and automatic curations
             queryset = (
-                CurationData.objects.filter(gene_symbol=search_query).filter(
-                    Q(status="manual")
-                    | Q(status="automatic", user__groups__name="g2p_admin")
-                )
+                CurationData.objects.filter(gene_symbol=search_query)
                 .order_by("stable_id__stable_id")
                 .distinct()
                 .annotate(
